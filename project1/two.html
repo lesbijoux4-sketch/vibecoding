@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>스마트 모둠 편성기</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Pretendard', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.94) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .card-animate {
+      animation: popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .highlight-name {
+      animation: pulseHighlight 1.2s infinite;
+    }
+    @keyframes pulseHighlight {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); background-color: #fef08a; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100/70 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- 상단 네비게이션 헤더 -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      <!-- 로고 / 타이틀 -->
+      <div class="flex items-center space-x-3 shrink-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-100">
+          <i data-lucide="users" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
+            스마트 모둠 편성기
+          </h1>
+          <p class="text-xs text-slate-500 hidden sm:block">공정하고 균형 잡힌 무작위 조 배정 도구</p>
+        </div>
+      </div>
+
+      <!-- 탭 스위처 -->
+      <nav class="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200">
+        <button id="tab-admin-btn" type="button" class="px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center gap-1.5 bg-white text-indigo-700 shadow-sm">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+          <span>관리자 설정</span>
+        </button>
+        <button id="tab-student-btn" type="button" class="px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+          <i data-lucide="projector" class="w-4 h-4"></i>
+          <span>학생 공유 화면</span>
+        </button>
+      </nav>
+
+      <!-- 우측 컨트롤 버튼 (새 창 분리 / 전체화면) -->
+      <div class="flex items-center gap-2">
+        <button id="header-popout-btn" type="button" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-sm" title="학생용 화면을 별도 새 창(프로젝터/듀얼모니터)으로 분리">
+          <i data-lucide="external-link" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">학생 화면 새 창 분리</span>
+          <span class="sm:hidden">새 창</span>
+        </button>
+        <button id="fullscreen-btn" type="button" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors" title="전체화면 토글">
+          <i data-lucide="maximize" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 컨텐츠 영역 -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- 1. [관리자용 탭] -->
+    <div id="view-admin" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- 설정 패널 (좌측 5 cols) -->
+      <section class="lg:col-span-5 flex flex-col gap-6">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col gap-5">
+          
+          <!-- 명단 입력 헤더 -->
+          <div class="flex items-center justify-between">
+            <label for="member-input" class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+              <i data-lucide="user-check" class="w-4 h-4 text-indigo-600"></i>
+              모둠원 명단 입력
+              <span id="member-count-badge" class="ml-1 text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">0명</span>
+            </label>
+            <div class="flex gap-1.5">
+              <button id="sample-btn" type="button" class="text-xs px-2.5 py-1 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md font-semibold transition-colors">
+                샘플 채우기
+              </button>
+              <button id="clear-btn" type="button" class="text-xs px-2 py-1 text-slate-400 hover:text-rose-600 rounded-md font-semibold transition-colors">
+                지우기
+              </button>
+            </div>
+          </div>
+
+          <!-- 텍스트 영역 -->
+          <div class="relative">
+            <textarea id="member-input" rows="8" placeholder="학생 이름을 입력하세요.&#10;줄바꿈(Enter) 또는 쉼표(,)로 구분됩니다.&#10;&#10;예시:&#10;김민준&#10;이서연&#10;박도윤&#10;정예은"
+              class="w-full text-sm p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-all resize-y custom-scrollbar font-medium text-slate-700"></textarea>
+          </div>
+
+          <!-- 편성 방식 선택 (2가지 기준) -->
+          <div class="space-y-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">편성 방식 설정</span>
+            <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
+              <button id="mode-size-btn" type="button" class="py-2 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 bg-white text-indigo-700 shadow-sm">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                모둠당 인원수 기준
+              </button>
+              <button id="mode-count-btn" type="button" class="py-2 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900">
+                <i data-lucide="grid" class="w-4 h-4"></i>
+                총 모둠 수 기준
+              </button>
+            </div>
+          </div>
+
+          <!-- 기준 수치 설정 -->
+          <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2">
+            <div class="flex justify-between items-center">
+              <label id="target-label" for="target-value" class="text-sm font-bold text-slate-700">모둠당 목표 인원</label>
+              <div class="flex items-center space-x-2">
+                <button id="val-minus" type="button" class="w-8 h-8 rounded-lg bg-white border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 font-bold active:scale-95 transition-all">-</button>
+                <input id="target-value" type="number" min="1" max="100" value="4" class="w-14 text-center font-bold text-slate-900 bg-white border border-slate-300 rounded-lg py-1 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <button id="val-plus" type="button" class="w-8 h-8 rounded-lg bg-white border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 font-bold active:scale-95 transition-all">+</button>
+              </div>
+            </div>
+            <p id="target-desc" class="text-xs text-slate-400">인원에 맞춰 남는 학생은 각 조에 1명씩 균등하게 배분됩니다.</p>
+          </div>
+
+          <!-- 모둠명 테마 -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-400">모둠 이름 스타일</label>
+            <select id="naming-theme" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-700 font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              <option value="number">숫자 (1모둠, 2모둠, ...)</option>
+              <option value="alphabet">알파벳 (Team A, Team B, ...)</option>
+              <option value="colors">컬러 (레드팀, 블루팀, 그린팀...)</option>
+              <option value="planets">태양계 (수성, 금성, 지구, 화성...)</option>
+              <option value="animals">동물 (사자, 호랑이, 독수리, 돌고래...)</option>
+            </select>
+          </div>
+
+          <!-- 편성 실행 버튼들 -->
+          <div class="pt-2 flex flex-col gap-2">
+            <button id="admin-generate-btn" type="button" class="w-full py-3.5 px-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 hover:shadow-indigo-200 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
+              <i data-lucide="sparkles" class="w-5 h-5"></i>
+              <span>모둠 무작위 편성하기</span>
+            </button>
+            <div class="grid grid-cols-2 gap-2">
+              <button id="switch-to-student-btn" type="button" class="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5">
+                <i data-lucide="monitor" class="w-4 h-4 text-slate-500"></i>
+                <span>학생 화면 전환</span>
+              </button>
+              <button id="admin-popout-btn" type="button" class="py-2.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5">
+                <i data-lucide="external-link" class="w-4 h-4 text-indigo-600"></i>
+                <span>새 창으로 분리</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 우측: 관리자 미리보기 (7 cols) -->
+      <section class="lg:col-span-7 flex flex-col gap-6">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:px-6 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">편성 미리보기</h2>
+            <p id="admin-result-summary" class="text-xs text-slate-500">명단을 입력하고 편성 버튼을 눌러주세요.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="admin-reshuffle-btn" disabled class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 transition-all shadow-sm">
+              <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+              <span>다시 섞기</span>
+            </button>
+            <button id="admin-copy-btn" disabled class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 transition-all shadow-sm">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              <span>결과 복사</span>
+            </button>
+            <button id="admin-download-btn" disabled class="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 transition-all shadow-sm">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>다운로드</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 모둠 목록 컨테이너 -->
+        <div id="admin-results-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 auto-rows-max">
+          <div class="col-span-full py-16 flex flex-col items-center justify-center text-center p-8 bg-white border border-dashed border-slate-300 rounded-2xl">
+            <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+              <i data-lucide="layout-grid" class="w-7 h-7"></i>
+            </div>
+            <h3 class="text-base font-semibold text-slate-700 mb-1">아직 생성된 모둠이 없습니다</h3>
+            <p class="text-xs text-slate-400 max-w-sm mb-4 leading-relaxed">
+              인원을 입력하고 '모둠 무작위 편성하기'를 누르면 조별 배정이 표시됩니다.
+            </p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- 2. [학생 공유용 화면 탭] -->
+    <div id="view-student" class="hidden flex-col gap-6">
+      
+      <!-- 상단 히어로 배너: 대형 편성/다시뽑기 버튼 -->
+      <div class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 rounded-3xl p-6 sm:p-10 text-white shadow-xl relative overflow-hidden flex flex-col items-center text-center">
+        <div class="absolute -top-20 -left-20 w-60 h-60 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-20 -right-20 w-60 h-60 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/10 text-indigo-200 border border-white/15 mb-3">
+          <i data-lucide="presentation" class="w-3.5 h-3.5"></i> 프레젠테이션 & 모둠 발표 화면
+        </span>
+
+        <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight mb-2">
+          🎲 공정한 우리 반 모둠 발표
+        </h2>
+        <p id="student-hero-desc" class="text-sm sm:text-base text-indigo-200 max-w-xl mb-6">
+          인원에 따라 공평하게 배정됩니다. 아래 버튼을 눌러 모둠을 편성하세요!
+        </p>
+
+        <!-- 즉시 모둠 구성 대형 인터랙티브 버튼 -->
+        <div class="flex flex-wrap items-center justify-center gap-3 w-full max-w-md">
+          <button id="student-generate-btn" type="button" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-900 font-extrabold rounded-2xl text-lg sm:text-xl shadow-xl shadow-amber-500/30 active:scale-95 transition-all flex items-center justify-center gap-2.5">
+            <i data-lucide="dices" class="w-7 h-7"></i>
+            <span id="student-btn-label">지금 모둠 편성하기!</span>
+          </button>
+          <button id="student-popout-btn" type="button" class="px-4 py-3 bg-white/15 hover:bg-white/25 text-white border border-white/20 font-bold rounded-2xl text-sm transition-all flex items-center justify-center gap-2">
+            <i data-lucide="external-link" class="w-4 h-4"></i>
+            <span>새 창으로 분리</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 검색 바 및 결과 요약 -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="relative w-full sm:w-80">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+          <input id="student-search-input" type="text" placeholder="내 이름 검색 (예: 김민준)" 
+            class="w-full text-sm pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-all font-medium">
+        </div>
+        <div class="flex items-center gap-3 text-sm text-slate-600">
+          <span id="student-status-badge" class="font-bold text-slate-800">편성 대기 중</span>
+          <button id="student-copy-btn" type="button" class="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold text-slate-700 transition-colors flex items-center gap-1.5">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>결과 복사</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 대형 카드 그리드 컨테이너 -->
+      <div id="student-results-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div class="col-span-full py-20 flex flex-col items-center justify-center text-center p-8 bg-white border border-dashed border-slate-300 rounded-3xl">
+          <div class="w-16 h-16 rounded-3xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
+            <i data-lucide="dices" class="w-8 h-8 animate-bounce"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-800 mb-2">아직 모둠이 추첨되지 않았습니다</h3>
+          <p class="text-sm text-slate-400 max-w-md">
+            상단의 <strong class="text-amber-600 font-bold">'지금 모둠 편성하기!'</strong> 버튼을 누르면 전체 배정이 공개됩니다!
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- 토스트 알림 컴포넌트 -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300 bg-slate-900 text-white text-xs sm:text-sm font-semibold px-4 py-3 rounded-xl shadow-xl flex items-center gap-2">
+    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+    <span id="toast-message">알림 메시지</span>
+  </div>
+
+  <script>
+    // 전역 상태 변수
+    let currentMode = 'size'; // 'size' or 'count'
+    let generatedTeams = [];
+    let popoutWindowRef = null;
+
+    // 브로드캐스트 채널
+    const syncChannel = (typeof window.BroadcastChannel !== 'undefined') ? new BroadcastChannel('team_maker_channel') : null;
+
+    // 샘플 명단 20명
+    const sampleMembers = [
+      "김민준", "이서연", "박도윤", "정예은", "최현우",
+      "강하은", "조시우", "윤지우", "장건우", "임수아",
+      "한지호", "오서아", "서준혁", "신유나", "권태양",
+      "황채원", "송민서", "안동현", "유시아", "홍지훈"
+    ];
+
+    // 테마 명칭 사전
+    const themeNames = {
+      number: (i) => `${i + 1}모둠`,
+      alphabet: (i) => `Team ${String.fromCharCode(65 + (i % 26))}${i >= 26 ? Math.floor(i / 26) : ''}`,
+      colors: (i) => {
+        const colors = ["레드팀", "블루팀", "그린팀", "옐로우팀", "퍼플팀", "오렌지팀", "민트팀", "핑크팀"];
+        return colors[i % colors.length] + (i >= colors.length ? ` ${Math.floor(i / colors.length) + 1}` : "");
+      },
+      planets: (i) => {
+        const planets = ["수성조", "금성조", "지구조", "화성조", "목성조", "토성조", "천왕성조", "해왕성조"];
+        return planets[i % planets.length] + (i >= planets.length ? ` ${Math.floor(i / planets.length) + 1}` : "");
+      },
+      animals: (i) => {
+        const animals = ["호랑이조", "독수리조", "돌고래조", "사자조", "팬더조", "늑대조", "북극곰조", "표범조"];
+        return animals[i % animals.length] + (i >= animals.length ? ` ${Math.floor(i / animals.length) + 1}` : "");
+      }
+    };
+
+    // DOM 요소 캐싱
+    const tabAdminBtn = document.getElementById('tab-admin-btn');
+    const tabStudentBtn = document.getElementById('tab-student-btn');
+    const viewAdmin = document.getElementById('view-admin');
+    const viewStudent = document.getElementById('view-student');
+    const headerPopoutBtn = document.getElementById('header-popout-btn');
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const switchToStudentBtn = document.getElementById('switch-to-student-btn');
+    const adminPopoutBtn = document.getElementById('admin-popout-btn');
+    const studentPopoutBtn = document.getElementById('student-popout-btn');
+
+    const memberInput = document.getElementById('member-input');
+    const memberCountBadge = document.getElementById('member-count-badge');
+    const sampleBtn = document.getElementById('sample-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const modeSizeBtn = document.getElementById('mode-size-btn');
+    const modeCountBtn = document.getElementById('mode-count-btn');
+    const targetLabel = document.getElementById('target-label');
+    const targetDesc = document.getElementById('target-desc');
+    const targetValue = document.getElementById('target-value');
+    const valMinus = document.getElementById('val-minus');
+    const valPlus = document.getElementById('val-plus');
+    const namingTheme = document.getElementById('naming-theme');
+
+    const adminGenerateBtn = document.getElementById('admin-generate-btn');
+    const adminReshuffleBtn = document.getElementById('admin-reshuffle-btn');
+    const adminCopyBtn = document.getElementById('admin-copy-btn');
+    const adminDownloadBtn = document.getElementById('admin-download-btn');
+    const adminResultsContainer = document.getElementById('admin-results-container');
+    const adminResultSummary = document.getElementById('admin-result-summary');
+
+    const studentGenerateBtn = document.getElementById('student-generate-btn');
+    const studentBtnLabel = document.getElementById('student-btn-label');
+    const studentResultsContainer = document.getElementById('student-results-container');
+    const studentStatusBadge = document.getElementById('student-status-badge');
+    const studentSearchInput = document.getElementById('student-search-input');
+    const studentCopyBtn = document.getElementById('student-copy-btn');
+
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
+
+    // 토스트 알림
+    function showToast(msg) {
+      if (!toast || !toastMessage) return;
+      toastMessage.textContent = msg;
+      toast.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 2400);
+    }
+
+    // 명단 파싱
+    function getParsedMembers() {
+      const raw = memberInput ? memberInput.value : '';
+      if (!raw.trim()) return [];
+      return raw
+        .split(/[\n,]+/)
+        .map(name => name.trim())
+        .filter(name => name.length > 0);
+    }
+
+    function updateMemberCount() {
+      const count = getParsedMembers().length;
+      if (memberCountBadge) {
+        memberCountBadge.textContent = `${count}명`;
+      }
+    }
+
+    // 탭 전환
+    function switchTab(tab) {
+      if (tab === 'admin') {
+        tabAdminBtn.className = "px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center gap-1.5 bg-white text-indigo-700 shadow-sm";
+        tabStudentBtn.className = "px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900";
+        viewAdmin.classList.remove('hidden');
+        viewAdmin.classList.add('grid');
+        viewStudent.classList.add('hidden');
+        viewStudent.classList.remove('flex');
+      } else {
+        tabStudentBtn.className = "px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center gap-1.5 bg-white text-indigo-700 shadow-sm";
+        tabAdminBtn.className = "px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900";
+        viewAdmin.classList.add('hidden');
+        viewAdmin.classList.remove('grid');
+        viewStudent.classList.remove('hidden');
+        viewStudent.classList.add('flex');
+        renderStudentResults(studentSearchInput ? studentSearchInput.value : '');
+      }
+      lucide.createIcons();
+    }
+
+    // 모드 전환
+    function setMode(mode) {
+      currentMode = mode;
+      if (mode === 'size') {
+        modeSizeBtn.className = "py-2 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 bg-white text-indigo-700 shadow-sm";
+        modeCountBtn.className = "py-2 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900";
+        targetLabel.textContent = "모둠당 목표 인원";
+        targetDesc.textContent = "인원에 맞춰 남는 학생은 각 조에 1명씩 균등하게 배분됩니다.";
+      } else {
+        modeCountBtn.className = "py-2 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 bg-white text-indigo-700 shadow-sm";
+        modeSizeBtn.className = "py-2 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900";
+        targetLabel.textContent = "총 모둠 개수";
+        targetDesc.textContent = "원하는 모둠 개수에 맞춰 전체 인원을 고르게 나누어 편성합니다.";
+      }
+    }
+
+    // Fisher-Yates 셔플
+    function shuffleArray(arr) {
+      const array = [...arr];
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    // 균등 분배 알고리즘
+    function partitionTeams(members, mode, target) {
+      const total = members.length;
+      if (total === 0) return [];
+
+      let numTeams;
+      if (mode === 'size') {
+        numTeams = Math.max(1, Math.round(total / Math.max(1, target)));
+      } else {
+        numTeams = Math.max(1, target);
+      }
+      numTeams = Math.min(numTeams, total);
+
+      const teams = Array.from({ length: numTeams }, () => []);
+      const shuffled = shuffleArray(members);
+      shuffled.forEach((member, index) => {
+        teams[index % numTeams].push(member);
+      });
+      return teams;
+    }
+
+    // 관리자 뷰 렌더링
+    function renderAdminResults() {
+      if (!generatedTeams || generatedTeams.length === 0) {
+        adminResultsContainer.innerHTML = `
+          <div class="col-span-full py-16 flex flex-col items-center justify-center text-center p-8 bg-white border border-dashed border-slate-300 rounded-2xl">
+            <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+              <i data-lucide="layout-grid" class="w-7 h-7"></i>
+            </div>
+            <h3 class="text-base font-semibold text-slate-700 mb-1">아직 생성된 모둠이 없습니다</h3>
+            <p class="text-xs text-slate-400 max-w-sm mb-4 leading-relaxed">
+              인원을 입력하고 '모둠 무작위 편성하기'를 누르면 조별 배정이 표시됩니다.
+            </p>
+          </div>
+        `;
+        adminReshuffleBtn.disabled = true;
+        adminCopyBtn.disabled = true;
+        adminDownloadBtn.disabled = true;
+        adminResultSummary.textContent = "명단을 입력하고 편성 버튼을 눌러주세요.";
+        lucide.createIcons();
+        return;
+      }
+
+      const totalMembers = generatedTeams.reduce((sum, t) => sum + t.length, 0);
+      adminResultSummary.textContent = `총 ${totalMembers}명 · ${generatedTeams.length}개 모둠으로 고르게 편성 완료`;
+
+      const theme = namingTheme.value;
+      const getTeamName = themeNames[theme] || themeNames.number;
+      adminResultsContainer.innerHTML = '';
+
+      generatedTeams.forEach((team, idx) => {
+        const teamName = getTeamName(idx);
+        const card = document.createElement('div');
+        card.className = "card-animate bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col justify-between";
+        card.style.animationDelay = `${idx * 0.03}s`;
+
+        const membersHtml = team.map((member, mIdx) => `
+          <li class="flex items-center justify-between text-xs sm:text-sm py-1.5 px-3 rounded-lg bg-slate-50 border border-slate-100">
+            <span class="font-semibold text-slate-800">${member}</span>
+            <span class="text-[10px] text-slate-400 font-mono">#${mIdx + 1}</span>
+          </li>
+        `).join('');
+
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+              <h3 class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+                ${teamName}
+              </h3>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold">
+                ${team.length}명
+              </span>
+            </div>
+            <ul class="space-y-1.5">
+              ${membersHtml}
+            </ul>
+          </div>
+        `;
+        adminResultsContainer.appendChild(card);
+      });
+
+      adminReshuffleBtn.disabled = false;
+      adminCopyBtn.disabled = false;
+      adminDownloadBtn.disabled = false;
+      lucide.createIcons();
+    }
+
+    // 학생 공유 뷰 렌더링
+    function renderStudentResults(searchTerm = '') {
+      if (!generatedTeams || generatedTeams.length === 0) {
+        studentResultsContainer.innerHTML = `
+          <div class="col-span-full py-20 flex flex-col items-center justify-center text-center p-8 bg-white border border-dashed border-slate-300 rounded-3xl">
+            <div class="w-16 h-16 rounded-3xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
+              <i data-lucide="dices" class="w-8 h-8 animate-bounce"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">아직 모둠이 추첨되지 않았습니다</h3>
+            <p class="text-sm text-slate-400 max-w-md">
+              상단의 <strong class="text-amber-600 font-bold">'지금 모둠 편성하기!'</strong> 버튼을 누르면 전체 배정이 공개됩니다!
+            </p>
+          </div>
+        `;
+        studentStatusBadge.textContent = "편성 대기 중";
+        studentBtnLabel.textContent = "지금 모둠 편성하기!";
+        lucide.createIcons();
+        return;
+      }
+
+      studentBtnLabel.textContent = "🎲 다시 섞기 (재추첨)";
+      const totalMembers = generatedTeams.reduce((sum, t) => sum + t.length, 0);
+      studentStatusBadge.textContent = `총 ${totalMembers}명 · ${generatedTeams.length}개 모둠 완료`;
+
+      const theme = namingTheme.value;
+      const getTeamName = themeNames[theme] || themeNames.number;
+
+      const headerGradients = [
+        "from-indigo-600 to-indigo-700",
+        "from-emerald-600 to-teal-700",
+        "from-amber-500 to-orange-600",
+        "from-rose-500 to-pink-600",
+        "from-cyan-600 to-blue-700",
+        "from-purple-600 to-violet-700",
+        "from-fuchsia-600 to-rose-700",
+        "from-teal-600 to-emerald-700"
+      ];
+
+      studentResultsContainer.innerHTML = '';
+
+      generatedTeams.forEach((team, idx) => {
+        const teamName = getTeamName(idx);
+        const grad = headerGradients[idx % headerGradients.length];
+
+        const card = document.createElement('div');
+        card.className = "card-animate bg-white rounded-3xl border border-slate-200/80 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col";
+        card.style.animationDelay = `${idx * 0.04}s`;
+
+        const membersList = team.map((member, mIdx) => {
+          const isMatch = searchTerm.trim().length > 0 && member.includes(searchTerm.trim());
+          const matchClass = isMatch 
+            ? 'bg-amber-100 text-amber-900 font-bold border-amber-300 ring-2 ring-amber-400 highlight-name' 
+            : 'bg-slate-50 text-slate-700 font-semibold border-slate-100';
+
+          return `
+            <li class="flex items-center justify-between text-base sm:text-lg py-2.5 px-4 rounded-xl border transition-all ${matchClass}">
+              <span class="tracking-tight">${member}</span>
+              <span class="text-xs px-2 py-0.5 rounded-full ${isMatch ? 'bg-amber-200 text-amber-900 font-bold' : 'bg-slate-200 text-slate-500 font-mono'}">
+                ${mIdx + 1}
+              </span>
+            </li>
+          `;
+        }).join('');
+
+        card.innerHTML = `
+          <div class="bg-gradient-to-r ${grad} p-4 sm:p-5 text-white flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-white/40"></span>
+              <h3 class="font-extrabold text-lg sm:text-xl tracking-tight">${teamName}</h3>
+            </div>
+            <span class="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-white/20 backdrop-blur-md">
+              ${team.length}명
+            </span>
+          </div>
+          <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
+            <ul class="space-y-2">
+              ${membersList}
+            </ul>
+          </div>
+        `;
+        studentResultsContainer.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    // 상태 동기화 발송
+    function syncToAll(triggerConfetti = false) {
+      const state = {
+        action: 'update',
+        teams: generatedTeams,
+        theme: namingTheme.value,
+        triggerConfetti: triggerConfetti,
+        timestamp: Date.now()
+      };
+
+      // 1. BroadcastChannel
+      if (syncChannel) {
+        try { syncChannel.postMessage(state); } catch (e) {}
+      }
+
+      // 2. localStorage
+      try {
+        localStorage.setItem('team_maker_sync_data', JSON.stringify(state));
+      } catch (e) {}
+
+      // 3. 직접 열려있는 팝업창 객체로 직통 호출 (보안 제한이 없는 환경)
+      if (popoutWindowRef && !popoutWindowRef.closed && typeof popoutWindowRef.receiveUpdate === 'function') {
+        try { popoutWindowRef.receiveUpdate(state); } catch (e) {}
+      }
+    }
+
+    // 모둠 생성 메인 로직
+    function executeGenerate(triggerConfetti = true) {
+      let members = getParsedMembers();
+      
+      // 명단이 없으면 샘플 20명 자동 주입
+      if (members.length === 0) {
+        memberInput.value = sampleMembers.join('\n');
+        updateMemberCount();
+        members = getParsedMembers();
+        showToast("샘플 명단(20명)으로 모둠을 생성합니다!");
+      }
+
+      const target = parseInt(targetValue.value, 10) || 4;
+      generatedTeams = partitionTeams(members, currentMode, target);
+
+      renderAdminResults();
+      renderStudentResults(studentSearchInput ? studentSearchInput.value : '');
+
+      if (triggerConfetti && typeof confetti === 'function') {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+
+      syncToAll(triggerConfetti);
+      showToast("새로운 모둠이 편성되었습니다! 🎉");
+    }
+
+    // 결과 텍스트 복사
+    function copyResultText() {
+      if (!generatedTeams || generatedTeams.length === 0) return;
+      const theme = namingTheme.value;
+      const getTeamName = themeNames[theme] || themeNames.number;
+      const total = generatedTeams.reduce((a, b) => a + b.length, 0);
+      const lines = [`=== 모둠 편성 결과 (총 ${total}명) ===\n`];
+
+      generatedTeams.forEach((team, idx) => {
+        lines.push(`[${getTeamName(idx)}] (${team.length}명)`);
+        lines.push(team.join(', '));
+        lines.push('');
+      });
+
+      const text = lines.join('\n');
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showToast("결과가 클립보드에 복사되었습니다!");
+      } catch (err) {
+        showToast("복사에 실패했습니다.");
+      }
+      document.body.removeChild(textarea);
+    }
+
+    // 팝업 창 분리 함수 (about:blank 열고 document.write 주입으로 Blob/보안 오류 차단)
+    function openStudentPopout() {
+      const popWin = window.open('', 'TeamMakerStudentWindow', 'width=1100,height=820,menubar=no,toolbar=no,location=no,status=no,resizable=yes');
+      if (!popWin) {
+        showToast("브라우저 팝업이 차단되었습니다. 팝업을 허용해주세요!");
+        return;
+      }
+
+      popoutWindowRef = popWin;
+
+      const popHTML = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>우리 반 모둠 편성표 (프로젝터 전용)</title>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <script src="https://unpkg.com/lucide@latest"><\/script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"><\/script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Pretendard', sans-serif; }
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.94) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .card-animate { animation: popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .highlight-name { animation: pulseHighlight 1.2s infinite; }
+    @keyframes pulseHighlight {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); background-color: #fef08a; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100/80 text-slate-800 min-h-screen flex flex-col antialiased">
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
+          <i data-lucide="projector" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-slate-900 tracking-tight">우리 반 모둠 편성표</h1>
+          <p class="text-xs text-slate-500">실시간 연동 프레젠테이션 화면</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          실시간 연동 중
+        </span>
+        <button id="pop-fullscreen-btn" type="button" class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors" title="전체화면">
+          <i data-lucide="maximize" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+    <div class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 rounded-3xl p-6 sm:p-10 text-white shadow-xl relative overflow-hidden flex flex-col items-center text-center">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/10 text-indigo-200 border border-white/15 mb-3">
+        <i data-lucide="presentation" class="w-3.5 h-3.5"></i> 모둠 발표 화면
+      </span>
+      <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight mb-2">🎲 공정한 우리 반 모둠 발표</h2>
+      <p id="pop-hero-desc" class="text-sm sm:text-base text-indigo-200 max-w-xl mb-6">아래 버튼을 눌러 모둠을 편성하거나 다시 섞을 수 있습니다.</p>
+      
+      <button id="pop-generate-btn" type="button" class="px-8 py-4 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-900 font-extrabold rounded-2xl text-lg sm:text-xl shadow-2xl shadow-amber-500/30 active:scale-95 transition-all flex items-center justify-center gap-3">
+        <i data-lucide="dices" class="w-7 h-7"></i>
+        <span id="pop-btn-label">지금 모둠 편성하기!</span>
+      </button>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="relative w-full sm:w-80">
+        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+        <input id="pop-search-input" type="text" placeholder="내 이름 검색 (예: 김민준)" 
+          class="w-full text-sm pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-all font-medium">
+      </div>
+      <div class="flex items-center gap-3 text-sm text-slate-500">
+        <span id="pop-status-badge" class="font-bold text-slate-800">편성 대기 중</span>
+      </div>
+    </div>
+
+    <div id="pop-results-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+  </main>
+
+  <script>
+    let localTeams = [];
+    let localTheme = 'number';
+
+    const themeNames = {
+      number: (i) => (i + 1) + '모둠',
+      alphabet: (i) => 'Team ' + String.fromCharCode(65 + (i % 26)),
+      colors: (i) => {
+        const colors = ["레드팀", "블루팀", "그린팀", "옐로우팀", "퍼플팀", "오렌지팀", "민트팀", "핑크팀"];
+        return colors[i % colors.length];
+      },
+      planets: (i) => {
+        const planets = ["수성조", "금성조", "지구조", "화성조", "목성조", "토성조", "천왕성조", "해왕성조"];
+        return planets[i % planets.length];
+      },
+      animals: (i) => {
+        const animals = ["호랑이조", "독수리조", "돌고래조", "사자조", "팬더조", "늑대조", "북극곰조", "표범조"];
+        return animals[i % animals.length];
+      }
+    };
+
+    const headerGradients = [
+      "from-indigo-600 to-indigo-700",
+      "from-emerald-600 to-teal-700",
+      "from-amber-500 to-orange-600",
+      "from-rose-500 to-pink-600",
+      "from-cyan-600 to-blue-700",
+      "from-purple-600 to-violet-700",
+      "from-fuchsia-600 to-rose-700",
+      "from-teal-600 to-emerald-700"
+    ];
+
+    function render(searchTerm = '') {
+      const container = document.getElementById('pop-results-container');
+      const badge = document.getElementById('pop-status-badge');
+      const btnLabel = document.getElementById('pop-btn-label');
+
+      if (!localTeams || localTeams.length === 0) {
+        container.innerHTML = '<div class="col-span-full py-20 text-center bg-white border border-dashed border-slate-300 rounded-3xl p-8"><h3 class="text-xl font-bold text-slate-700">모둠 추첨 대기 중</h3><p class="text-sm text-slate-400 mt-2">상단 버튼을 눌러 모둠을 편성하거나 관리자 화면에서 추첨을 시작하세요.</p></div>';
+        badge.textContent = "편성 대기 중";
+        btnLabel.textContent = "지금 모둠 편성하기!";
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      btnLabel.textContent = "🎲 다시 섞기 (재추첨)";
+      const total = localTeams.reduce((acc, cur) => acc + cur.length, 0);
+      badge.textContent = '총 ' + total + '명 · ' + localTeams.length + '개 모둠';
+
+      const getTeamName = themeNames[localTheme] || themeNames.number;
+      container.innerHTML = '';
+
+      localTeams.forEach((team, idx) => {
+        const card = document.createElement('div');
+        card.className = "card-animate bg-white rounded-3xl border border-slate-200/80 shadow-md hover:shadow-xl transition-all overflow-hidden flex flex-col";
+        card.style.animationDelay = (idx * 0.04) + 's';
+
+        const membersList = team.map((member, mIdx) => {
+          const isMatch = searchTerm.trim().length > 0 && member.includes(searchTerm.trim());
+          const matchClass = isMatch ? 'bg-amber-100 text-amber-900 font-bold border-amber-300 ring-2 ring-amber-400 highlight-name' : 'bg-slate-50 text-slate-700 font-semibold border-slate-100';
+          return '<li class="flex items-center justify-between text-base sm:text-lg py-2.5 px-4 rounded-xl border transition-all ' + matchClass + '"><span>' + member + '</span><span class="text-xs px-2 py-0.5 rounded-full bg-slate-200 text-slate-500 font-mono">' + (mIdx + 1) + '</span></li>';
+        }).join('');
+
+        const grad = headerGradients[idx % headerGradients.length];
+        card.innerHTML = '<div class="bg-gradient-to-r ' + grad + ' p-4 text-white flex items-center justify-between"><h3 class="font-bold text-lg">' + getTeamName(idx) + '</h3><span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-white/20">' + team.length + '명</span></div><div class="p-4 flex-1"><ul class="space-y-2">' + membersList + '</ul></div>';
+        container.appendChild(card);
+      });
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // 부모 창에서 직접 호출 가능한 업데이트 수신 함수
+    window.receiveUpdate = function(data) {
+      if (!data) return;
+      localTeams = data.teams || [];
+      localTheme = data.theme || 'number';
+      const search = document.getElementById('pop-search-input').value;
+      render(search);
+      if (data.triggerConfetti && typeof confetti === 'function') {
+        confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
+      }
+    };
+
+    // BroadcastChannel 수신
+    const channel = (typeof window.BroadcastChannel !== 'undefined') ? new BroadcastChannel('team_maker_channel') : null;
+    if (channel) {
+      channel.onmessage = (e) => {
+        if (e.data && e.data.action === 'update') {
+          window.receiveUpdate(e.data);
+        }
+      };
+    }
+
+    // storage 이벤트 수신 (localStorage fallback)
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'team_maker_sync_data' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          window.receiveUpdate(parsed);
+        } catch (err) {}
+      }
+    });
+
+    // 버튼 클릭 -> 부모 창에 생성 요청
+    document.getElementById('pop-generate-btn').addEventListener('click', () => {
+      if (window.opener && typeof window.opener.executeGenerate === 'function') {
+        window.opener.executeGenerate(true);
+      } else if (channel) {
+        channel.postMessage({ action: 'request_generate' });
+      }
+    });
+
+    // 검색
+    document.getElementById('pop-search-input').addEventListener('input', (e) => {
+      render(e.target.value);
+    });
+
+    // 전체화면
+    document.getElementById('pop-fullscreen-btn').addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    if (window.lucide) lucide.createIcons();
+  <\/script>
+</body>
+</html>`;
+
+      popWin.document.open();
+      popWin.document.write(popHTML);
+      popWin.document.close();
+
+      showToast("학생 공유 화면이 새 창으로 분리되었습니다! 🖥️");
+
+      // 팝업 로딩 후 초기 데이터 즉각 전달
+      setTimeout(() => {
+        syncToAll(false);
+      }, 300);
+    }
+
+    // 새 창에서 편성 요청 수신 처리
+    if (syncChannel) {
+      syncChannel.onmessage = (e) => {
+        if (e.data && e.data.action === 'request_generate') {
+          executeGenerate(true);
+        }
+      };
+    }
+
+    // 전역 함수 등록 (window.opener에서 직접 호출 가능하도록)
+    window.executeGenerate = executeGenerate;
+
+    // 이벤트 리스너 등록
+    tabAdminBtn.addEventListener('click', () => switchTab('admin'));
+    tabStudentBtn.addEventListener('click', () => switchTab('student'));
+    switchToStudentBtn.addEventListener('click', () => switchTab('student'));
+
+    headerPopoutBtn.addEventListener('click', openStudentPopout);
+    adminPopoutBtn.addEventListener('click', openStudentPopout);
+    studentPopoutBtn.addEventListener('click', openStudentPopout);
+
+    fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    });
+
+    memberInput.addEventListener('input', updateMemberCount);
+    sampleBtn.addEventListener('click', () => {
+      memberInput.value = sampleMembers.join('\n');
+      updateMemberCount();
+      showToast("샘플 명단 20명을 불러왔습니다.");
+    });
+    clearBtn.addEventListener('click', () => {
+      memberInput.value = '';
+      updateMemberCount();
+      showToast("명단을 비웠습니다.");
+    });
+
+    modeSizeBtn.addEventListener('click', () => setMode('size'));
+    modeCountBtn.addEventListener('click', () => setMode('count'));
+
+    valMinus.addEventListener('click', () => {
+      const cur = parseInt(targetValue.value, 10) || 1;
+      if (cur > 1) targetValue.value = cur - 1;
+    });
+    valPlus.addEventListener('click', () => {
+      const cur = parseInt(targetValue.value, 10) || 1;
+      targetValue.value = cur + 1;
+    });
+
+    namingTheme.addEventListener('change', () => {
+      if (generatedTeams.length > 0) {
+        renderAdminResults();
+        renderStudentResults(studentSearchInput.value);
+        syncToAll(false);
+      }
+    });
+
+    adminGenerateBtn.addEventListener('click', () => executeGenerate(true));
+    adminReshuffleBtn.addEventListener('click', () => executeGenerate(true));
+    adminCopyBtn.addEventListener('click', copyResultText);
+    adminDownloadBtn.addEventListener('click', () => {
+      if (!generatedTeams || generatedTeams.length === 0) return;
+      const theme = namingTheme.value;
+      const getTeamName = themeNames[theme] || themeNames.number;
+      const lines = [`=== 모둠 편성 결과 ===\n`];
+      generatedTeams.forEach((team, idx) => {
+        lines.push(`[${getTeamName(idx)}] (${team.length}명)\n${team.join(', ')}\n`);
+      });
+      const blob = new Blob([lines.join('\n')], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `모둠편성결과_${new Date().toISOString().slice(0, 10)}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast("결과 파일이 다운로드되었습니다.");
+    });
+
+    studentGenerateBtn.addEventListener('click', () => executeGenerate(true));
+    studentCopyBtn.addEventListener('click', copyResultText);
+    studentSearchInput.addEventListener('input', (e) => {
+      renderStudentResults(e.target.value);
+    });
+
+    // 시작 시 인원 카운트 및 Lucide 아이콘 초기화
+    window.onload = function () {
+      updateMemberCount();
+      lucide.createIcons();
+    };
+  </script>
+</body>
+</html>
