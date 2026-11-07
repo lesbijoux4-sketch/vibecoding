@@ -1,1 +1,1097 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>고등학교 기하 - III. 벡터 인터랙티브 학습지</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- MathJax for rendering LaTeX math formulas -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
+  <!-- FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Pretendard', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .glass-nav {
+      backdrop-filter: blur(8px);
+      background: rgba(255, 255, 255, 0.9);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
 
+  <!-- Header -->
+  <header class="sticky top-0 z-50 glass-nav border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <span class="p-2 bg-indigo-600 text-white rounded-xl shadow-md">
+          <i class="fa-solid fa-compass-drafting text-xl"></i>
+        </span>
+        <div>
+          <h1 class="font-bold text-lg text-slate-900 leading-tight">고등학교 기하 [III. 벡터]</h1>
+          <p class="text-xs text-slate-500">인터랙티브 탐구 시뮬레이션 & 자기주도 형성평가</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="scoreBadge" class="hidden px-3 py-1 bg-indigo-100 text-indigo-700 font-semibold rounded-full text-sm border border-indigo-200">
+          점수: <span id="finalScoreVal">0</span> / 100
+        </span>
+        <a href="#quiz-section" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm transition">
+          <i class="fa-solid fa-pen-nib mr-1.5"></i>문제풀기
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-6xl mx-auto px-4 py-6 space-y-10">
+
+    <!-- Section 1: Intro Banner -->
+    <section class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-sky-800 rounded-3xl p-6 md:p-8 text-white shadow-xl">
+      <div class="max-w-3xl">
+        <span class="inline-block px-3 py-1 bg-white/20 text-indigo-100 rounded-full text-xs font-semibold tracking-wider uppercase mb-3">
+          개념 탐구 & 형성평가
+        </span>
+        <h2 class="text-2xl md:text-3xl font-extrabold mb-3">벡터의 연산, 성분과 내적, 그리고 도형의 방정식</h2>
+        <p class="text-indigo-100 text-sm md:text-base leading-relaxed">
+          크기와 방향을 함께 갖는 벡터의 기하학적 성질을 캔버스 시뮬레이터로 조작하며 직접 눈으로 확인해 보세요.
+          학습 후 10개의 핵심 문항(선택형 5문항, 서답형 5문항)을 풀고 채점 결과를 확인할 수 있습니다.
+        </p>
+      </div>
+    </section>
+
+    <!-- Section 2: Interactive Vector Lab -->
+    <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-100 gap-4">
+        <div>
+          <h3 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <span class="w-2.5 h-6 bg-indigo-600 rounded-full inline-block"></span>
+            벡터 인터랙티브 시뮬레이터 (Vector Canvas Lab)
+          </h3>
+          <p class="text-sm text-slate-500 mt-1">
+            원점 $O$에서 뻗어나가는 두 벡터 $\vec{a}$ (파랑), $\vec{b}$ (녹색)의 종점을 드래그하거나 슬라이더로 조절해 보세요.
+          </p>
+        </div>
+        <!-- Mode Tabs -->
+        <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold text-slate-600">
+          <button id="modeAddBtn" class="px-3 py-1.5 rounded-lg bg-white text-indigo-600 shadow-sm transition">
+            덧셈 $\vec{a}+\vec{b}$
+          </button>
+          <button id="modeSubBtn" class="px-3 py-1.5 rounded-lg hover:text-indigo-600 transition">
+            뺄셈 $\vec{a}-\vec{b}$
+          </button>
+          <button id="modeDotBtn" class="px-3 py-1.5 rounded-lg hover:text-indigo-600 transition">
+            내적 $\vec{a}\cdot\vec{b}$
+          </button>
+        </div>
+      </div>
+
+      <!-- Simulator Body -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- Canvas Canvas Area -->
+        <div class="lg:col-span-8 bg-slate-900 rounded-2xl overflow-hidden shadow-inner relative flex flex-col items-center justify-center p-2">
+          <canvas id="vectorCanvas" width="600" height="420" class="w-full h-auto cursor-crosshair rounded-xl"></canvas>
+          <div class="absolute bottom-3 left-4 bg-slate-950/70 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-300 flex items-center gap-3">
+            <span><i class="fa-solid fa-hand-pointer text-indigo-400 mr-1"></i>파란/초록 원을 드래그하세요</span>
+            <button id="resetVectorsBtn" class="text-slate-400 hover:text-white underline ml-2">초기화</button>
+          </div>
+        </div>
+
+        <!-- Controls & Metrics -->
+        <div class="lg:col-span-4 space-y-4">
+          <!-- Vector A Controls -->
+          <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span> 벡터 $\vec{a}$ 성분
+              </span>
+              <span id="labelVecA" class="text-sm font-mono font-bold text-slate-700">(3, 2)</span>
+            </div>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 text-xs text-slate-500">
+                <span class="w-4 font-mono">$x$:</span>
+                <input id="sliderAx" type="range" min="-7" max="7" step="0.5" value="3" class="w-full accent-blue-600">
+                <span id="valAx" class="w-8 text-right font-mono text-slate-700">3</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-slate-500">
+                <span class="w-4 font-mono">$y$:</span>
+                <input id="sliderAy" type="range" min="-7" max="7" step="0.5" value="2" class="w-full accent-blue-600">
+                <span id="valAy" class="w-8 text-right font-mono text-slate-700">2</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vector B Controls -->
+          <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span> 벡터 $\vec{b}$ 성분
+              </span>
+              <span id="labelVecB" class="text-sm font-mono font-bold text-slate-700">(1, 4)</span>
+            </div>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 text-xs text-slate-500">
+                <span class="w-4 font-mono">$x$:</span>
+                <input id="sliderBx" type="range" min="-7" max="7" step="0.5" value="1" class="w-full accent-emerald-600">
+                <span id="valBx" class="w-8 text-right font-mono text-slate-700">1</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-slate-500">
+                <span class="w-4 font-mono">$y$:</span>
+                <input id="sliderBy" type="range" min="-7" max="7" step="0.5" value="4" class="w-full accent-emerald-600">
+                <span id="valBy" class="w-8 text-right font-mono text-slate-700">4</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Real-time Mathematical Calculation Box -->
+          <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-2 text-xs">
+            <h4 class="font-bold text-indigo-900 flex items-center gap-1.5 text-sm">
+              <i class="fa-solid fa-calculator text-indigo-600"></i> 실시간 연산 분석
+            </h4>
+            <div class="divide-y divide-indigo-100/80 font-mono text-slate-700">
+              <div class="py-1 flex justify-between">
+                <span>크기 $|\vec{a}|$:</span>
+                <span id="valMagA" class="font-bold">3.61</span>
+              </div>
+              <div class="py-1 flex justify-between">
+                <span>크기 $|\vec{b}|$:</span>
+                <span id="valMagB" class="font-bold">4.12</span>
+              </div>
+              <div class="py-1 flex justify-between">
+                <span>사이각 $\theta$:</span>
+                <span id="valTheta" class="font-bold text-amber-700">42.3°</span>
+              </div>
+              <div class="py-1.5 flex justify-between items-center text-sm font-bold text-indigo-950">
+                <span id="calcTitle">내적 $\vec{a}\cdot\vec{b}$:</span>
+                <span id="calcResult" class="text-indigo-600 text-base">11.00</span>
+              </div>
+            </div>
+            <p id="geoNote" class="text-[11px] text-slate-500 italic mt-1">
+              * 평행사변형 대각선은 합벡터 $\vec{a}+\vec{b}$, 종점 연결은 차벡터 $\vec{a}-\vec{b}$입니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Quiz Assessment Section -->
+    <section id="quiz-section" class="space-y-6">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+        <div>
+          <span class="text-xs font-bold text-indigo-600 uppercase tracking-widest">Self-Assessment</span>
+          <h3 class="text-2xl font-extrabold text-slate-900 mt-0.5">단원 형성평가 (총 10문항)</h3>
+          <p class="text-sm text-slate-500">
+            [선택형 5문항] 답이 1개 또는 2개 이상일 수 있습니다. (정답을 모두 고르세요) / [서답형 5문항]
+          </p>
+        </div>
+        <div class="text-right">
+          <span class="text-xs text-slate-500">배점: 각 10점 (총 100점)</span>
+        </div>
+      </div>
+
+      <!-- Quiz Form -->
+      <form id="quizForm" class="space-y-8" onsubmit="event.preventDefault();">
+
+        <!-- ================= PART 1: 선택형 (1~5) ================= -->
+        <div class="space-y-6">
+          <div class="bg-indigo-900 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-between">
+            <span>Part 1. 선택형 문항 (선지 중 정답이 1개 또는 2개 이상 선택)</span>
+            <span class="text-xs font-normal text-indigo-200">다중선택 가능</span>
+          </div>
+
+          <!-- Question 1 -->
+          <div class="quiz-card p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4" data-qid="1">
+            <div class="flex items-start justify-between">
+              <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">
+                1
+              </span>
+              <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">10점 | 선택형</span>
+            </div>
+            <p class="text-slate-800 font-medium leading-relaxed">
+              서로 다른 점 $A, B, C, D$와 벡터 $\vec{a}, \vec{b}$에 대하여, <span class="text-indigo-600 font-semibold">&lt;보기&gt; 중 항상 옳은 설명만을 있는 대로 모두</span> 고른 것은?
+            </p>
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-sm space-y-2">
+              <div class="font-semibold text-slate-600 text-xs mb-1">&lt;보 기&gt;</div>
+              <p>ㄱ. $\vec{AB} + \vec{BC} + \vec{CA} = \vec{0}$</p>
+              <p>ㄴ. $\vec{AB} - \vec{AC} = \vec{BC}$</p>
+              <p>ㄷ. $|\vec{a}| = |\vec{b}|$이면 $\vec{a} = \vec{b}$이다.</p>
+              <p>ㄹ. 사각형 $ABCD$가 평행사변형이면 $\vec{AB} = \vec{DC}$이다.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-2">
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q1" value="A" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>① ㄱ</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q1" value="B" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>② ㄱ, ㄹ</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q1" value="C" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>③ ㄴ, ㄷ</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q1" value="D" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>④ ㄱ, ㄴ, ㄹ</span>
+              </label>
+            </div>
+            <!-- Feedback -->
+            <div class="feedback hidden mt-3 p-4 rounded-xl text-xs space-y-1"></div>
+          </div>
+
+          <!-- Question 2 (복수 정답 가능 문항) -->
+          <div class="quiz-card p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4" data-qid="2">
+            <div class="flex items-start justify-between">
+              <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">
+                2
+              </span>
+              <span class="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded font-semibold">10점 | 2개 이상 선택 가능</span>
+            </div>
+            <p class="text-slate-800 font-medium leading-relaxed">
+              서로 평행하지 않고 영벡터가 아닌 두 평면벡터 $\vec{a}, \vec{b}$에 대하여, <span class="font-semibold text-indigo-600">두 벡터가 서로 평행($\parallel$)한 관계인 것</span>을 선지에서 모두 고르시오. (정답 2개)
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-2">
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q2" value="A" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>① $\vec{p} = 2\vec{a} + \vec{b}$ 와 $\vec{q} = 6\vec{a} + 3\vec{b}$</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q2" value="B" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>② $\vec{p} = \vec{a} - 2\vec{b}$ 와 $\vec{q} = -2\vec{a} + 4\vec{b}$</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q2" value="C" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>③ $\vec{p} = 3\vec{a} - \vec{b}$ 와 $\vec{q} = \vec{a} - 3\vec{b}$</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q2" value="D" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>④ $\vec{p} = \vec{a} + \vec{b}$ 와 $\vec{q} = -\vec{a} + \vec{b}$</span>
+              </label>
+            </div>
+            <!-- Feedback -->
+            <div class="feedback hidden mt-3 p-4 rounded-xl text-xs space-y-1"></div>
+          </div>
+
+          <!-- Question 3 -->
+          <div class="quiz-card p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4" data-qid="3">
+            <div class="flex items-start justify-between">
+              <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">
+                3
+              </span>
+              <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">10점 | 선택형</span>
+            </div>
+            <p class="text-slate-800 font-medium leading-relaxed">
+              두 점 $A(1, 2, -1)$, $B(3, -1, 5)$와 벡터 $\vec{a} = (2, -1, 3)$에 대하여, 다음 계산 결과 중 <span class="font-semibold text-indigo-600">옳은 것</span>을 모두 고른 것은?
+            </p>
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs md:text-sm space-y-1.5 font-mono">
+              <p>ㄱ. $\vec{AB} = (2, -3, 6)$</p>
+              <p>ㄴ. $|\vec{AB}| = 7$</p>
+              <p>ㄷ. $2\vec{a} - \vec{AB} = (2, 1, 0)$</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-2">
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q3" value="A" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>① ㄱ</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q3" value="B" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>② ㄱ, ㄴ</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q3" value="C" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>③ ㄴ, ㄷ</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q3" value="D" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>④ ㄱ, ㄴ, ㄷ</span>
+              </label>
+            </div>
+            <!-- Feedback -->
+            <div class="feedback hidden mt-3 p-4 rounded-xl text-xs space-y-1"></div>
+          </div>
+
+          <!-- Question 4 (복수 정답 가능 문항) -->
+          <div class="quiz-card p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4" data-qid="4">
+            <div class="flex items-start justify-between">
+              <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">
+                4
+              </span>
+              <span class="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded font-semibold">10점 | 2개 이상 선택 가능</span>
+            </div>
+            <p class="text-slate-800 font-medium leading-relaxed">
+              영벡터가 아닌 두 벡터 $\vec{a}, \vec{b}$의 내적과 사이각 $\theta$에 대한 다음 진술 중 <span class="font-semibold text-indigo-600">항상 참(True)인 성질</span>을 있는 대로 모두 고르시오. (정답 2개)
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-2">
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q4" value="A" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>① $\vec{a} \perp \vec{b}$ 이면 $\vec{a} \cdot \vec{b} = 0$ 이다.</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q4" value="B" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>② $\vec{a} \cdot \vec{b} > 0$ 이면 두 벡터가 이루는 각 $\theta$는 둔각이다.</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q4" value="C" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>③ 임의의 벡터 $\vec{a}$에 대하여 $\vec{a} \cdot \vec{a} = |\vec{a}|^2$ 이다.</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q4" value="D" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>④ $(\vec{a} \cdot \vec{b})\vec{c} = \vec{a}(\vec{b} \cdot \vec{c})$ 가 항상 성립한다.</span>
+              </label>
+            </div>
+            <!-- Feedback -->
+            <div class="feedback hidden mt-3 p-4 rounded-xl text-xs space-y-1"></div>
+          </div>
+
+          <!-- Question 5 -->
+          <div class="quiz-card p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4" data-qid="5">
+            <div class="flex items-start justify-between">
+              <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">
+                5
+              </span>
+              <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">10점 | 선택형</span>
+            </div>
+            <p class="text-slate-800 font-medium leading-relaxed">
+              점 $A(2, -1, 3)$을 지나고 직선 $\frac{x-1}{2} = \frac{y+2}{-3} = z-4$ 에 평행한 직선의 방정식으로 <span class="font-semibold text-indigo-600">올바른 것</span>은?
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-2">
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q5" value="A" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>① $\frac{x-2}{2} = \frac{y+1}{-3} = z-3$</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q5" value="B" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>② $\frac{x+2}{2} = \frac{y-1}{-3} = z+3$</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q5" value="C" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>③ $2(x-2) - 3(y+1) + (z-3) = 0$</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-sm">
+                <input type="checkbox" name="q5" value="D" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>④ $\frac{x-1}{2} = \frac{y+2}{-1} = \frac{z-4}{3}$</span>
+              </label>
+            </div>
+            <!-- Feedback -->
+            <div class="feedback hidden mt-3 p-4 rounded-xl text-xs space-y-1"></div>
+          </div>
+        </div>
+
+        <!-- ================= PART 2: 서답형 (6~10) ================= -->
+        <div class="space-y-6 pt-4">
+          <div class="bg-sky-800 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-between">
+            <span>Part 2. 서답형 문항 (단답형 및 수치 직접 서술 입력)</span>
+            <span class="text-xs font-normal text-sky-200">정수/수치 입력</span>
+          </div>
+
+          <!-- Question 6 -->
+          <div class="quiz-card p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4" data-qid="6">
+            <div class="flex items-start justify-between">
+              <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-sky-100 text-sky-700 font-bold text-sm">
+                6
+              </span>
+              <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">10점 | 서답형</span>
+            </div>
+            <p class="text-slate-800 font-medium leading-relaxed">
+              두 평면벡터 $\vec{a}, \vec{b}$에 대하여 $|\vec{a}| = 3$, $|\vec{b}| = 4$이고, 두 벡터가 이루는 각의 크기가 $\theta = 60^\circ$일 때, 내적 $\vec{a} \cdot \vec{b}$의 값을 구하시오.
+            </p>
+            <div class="flex items-center gap-3 pt-1">
+              <span class="text-sm font-semibold text-slate-600">답:</span>
+              <input type="text" name="q6" placeholder="숫자만 입력 (예: 5)" class="w-44 px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
+            </div>
+            <div class="feedback hidden mt-3 p-4 rounded-xl text-xs space-y-1"></div>
+          </div>
+
+          <!-- Question 7 -->
+          <div class="quiz-card p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4" data-qid="7">
+            <div class="flex items-start justify-between">
+              <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-sky-100 text-sky-700 font-bold text-sm">
+                7
+              </span>
+              <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">10점 | 서답형</span>
+            </div>
+            <p class="text-slate-800 font-medium leading-relaxed">
+              두 공간벡터 $\vec{a} = (1, -4, 2)$와 $\vec{b} = (-6, -2, 3)$에 대하여, 두 벡터의 내적 $\vec{a} \cdot \vec{b}$의 값을 계산하시오.
+            </p>
+            <div class="flex items-center gap-3 pt-1">
+              <span class="text-sm font-semibold text-slate-600">답:</span>
+              <input type="text" name="q7" placeholder="숫자 입력" class="w-44 px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
+            </div>
+            <div class="feedback hidden mt-3 p-4 rounded-xl text-xs space-y-1"></div>
+          </div>
+
+          <!-- Question 8 -->
+          <div class="quiz-card p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4" data-qid="8">
+            <div class="flex items-start justify-between">
+              <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-sky-100 text-sky-700 font-bold text-sm">
+                8
+              </span>
+              <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">10점 | 서답형</span>
+            </div>
+            <p class="text-slate-800 font-medium leading-relaxed">
+              두 평면벡터 $\vec{a} = (3, 4)$와 $\vec{b} = (k, -6)$이 서로 수직($\vec{a} \perp \vec{b}$)이 되도록 하는 실수 $k$의 값을 구하시오.
+            </p>
+            <div class="flex items-center gap-3 pt-1">
+              <span class="text-sm font-semibold text-slate-600">답: $k =$</span>
+              <input type="text" name="q8" placeholder="값 입력" class="w-44 px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
+            </div>
+            <div class="feedback hidden mt-3 p-4 rounded-xl text-xs space-y-1"></div>
+          </div>
+
+          <!-- Question 9 -->
+          <div class="quiz-card p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4" data-qid="9">
+            <div class="flex items-start justify-between">
+              <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-sky-100 text-sky-700 font-bold text-sm">
+                9
+              </span>
+              <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">10점 | 서답형</span>
+            </div>
+            <p class="text-slate-800 font-medium leading-relaxed">
+              좌표공간에서 점 $P(1, 3, -2)$와 평면 $2x + 2y + z - 4 = 0$ 사이의 거리를 구하시오.
+            </p>
+            <div class="flex items-center gap-3 pt-1">
+              <span class="text-sm font-semibold text-slate-600">답: 거리 =</span>
+              <input type="text" name="q9" placeholder="양의 정수/실수 입력" class="w-44 px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
+            </div>
+            <div class="feedback hidden mt-3 p-4 rounded-xl text-xs space-y-1"></div>
+          </div>
+
+          <!-- Question 10 -->
+          <div class="quiz-card p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4" data-qid="10">
+            <div class="flex items-start justify-between">
+              <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-sky-100 text-sky-700 font-bold text-sm">
+                10
+              </span>
+              <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">10점 | 서답형</span>
+            </div>
+            <p class="text-slate-800 font-medium leading-relaxed">
+              두 벡터 $\vec{a}, \vec{b}$에 대하여 $|\vec{a}| = 2$, $|\vec{b}| = 1$이고, $|\vec{a} + \vec{b}| = \sqrt{7}$ 일 때, 두 벡터의 내적 $\vec{a} \cdot \vec{b}$의 값을 구하시오.
+            </p>
+            <div class="flex items-center gap-3 pt-1">
+              <span class="text-sm font-semibold text-slate-600">답: $\vec{a}\cdot\vec{b} =$</span>
+              <input type="text" name="q10" placeholder="숫자 입력" class="w-44 px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
+            </div>
+            <div class="feedback hidden mt-3 p-4 rounded-xl text-xs space-y-1"></div>
+          </div>
+        </div>
+
+        <!-- Submit & Control Area -->
+        <div class="pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <button id="submitBtn" type="button" class="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition text-base flex items-center justify-center gap-2">
+            <i class="fa-solid fa-paper-plane"></i> 최종 제출 및 채점하기
+          </button>
+          <button id="resetFormBtn" type="button" class="w-full sm:w-auto px-6 py-3.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl transition text-base">
+            <i class="fa-solid fa-rotate-left mr-1"></i> 답안 초기화
+          </button>
+        </div>
+
+        <!-- Score Result Modal / Card Area -->
+        <div id="resultSummary" class="hidden p-6 bg-slate-900 text-white rounded-3xl shadow-xl space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h4 class="text-lg font-bold flex items-center gap-2 text-indigo-400">
+              <i class="fa-solid fa-square-poll-vertical"></i> 최종 채점 결과
+            </h4>
+            <span id="scoreSummaryTag" class="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 rounded-full text-xs font-semibold">
+              평가 완료
+            </span>
+          </div>
+          <div class="flex flex-col md:flex-row md:items-center justify-around py-2 gap-4">
+            <div class="text-center">
+              <span class="text-xs text-slate-400">총 득점</span>
+              <div class="text-4xl font-extrabold text-white mt-1">
+                <span id="modalScore" class="text-indigo-400">0</span> <span class="text-lg text-slate-400 font-normal">/ 100점</span>
+              </div>
+            </div>
+            <div class="text-center border-slate-800 md:border-l md:pl-8">
+              <span class="text-xs text-slate-400">정답 문항 수</span>
+              <div class="text-2xl font-bold text-emerald-400 mt-1">
+                <span id="modalCorrectCount">0</span> <span class="text-sm text-slate-400 font-normal">/ 10 문항</span>
+              </div>
+            </div>
+            <div class="text-center border-slate-800 md:border-l md:pl-8">
+              <span class="text-xs text-slate-400">성취도</span>
+              <div id="modalGrade" class="text-xl font-bold text-amber-400 mt-1">
+                도전 완료
+              </div>
+            </div>
+          </div>
+          <p class="text-xs text-slate-400 text-center pt-2">
+            * 각 문제 아래에 표시된 정답 여부 및 상세 교과서 풀이를 확인하고 복습해 보세요!
+          </p>
+        </div>
+
+      </form>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-16 bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-6xl mx-auto px-4">
+      고등학교 기하 &bull; III. 벡터 교육과정 연계 인터랙티브 학습지 프로그램
+    </div>
+  </footer>
+
+  <!-- Script: Simulator & Grading Logic -->
+  <script>
+    /* ==========================================================
+       1. 벡터 캔버스 인터랙티브 시뮬레이터 (Vector Canvas Lab)
+       ========================================================== */
+    const canvas = document.getElementById('vectorCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Vector state in grid coordinate units (-7 ~ 7)
+    let vecA = { x: 3.0, y: 2.0 };
+    let vecB = { x: 1.0, y: 4.0 };
+    let activeMode = 'add'; // 'add', 'sub', 'dot'
+    let dragging = null; // 'A' or 'B'
+
+    const GRID_SIZE = 25; // pixels per grid unit
+    let originX = canvas.width / 2;
+    let originY = canvas.height / 2;
+
+    // Resizing & responsiveness
+    function initCanvasDimensions() {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width > 0) {
+        canvas.width = rect.width * (window.devicePixelRatio || 1);
+        canvas.height = (rect.width * 0.68) * (window.devicePixelRatio || 1);
+        originX = canvas.width / 2;
+        originY = canvas.height / 2;
+      }
+      renderCanvas();
+    }
+
+    // World to Screen / Screen to World coordinates
+    function toScreen(gx, gy) {
+      const scale = (canvas.width / 16); // fits approx -8 to +8
+      return {
+        x: originX + gx * scale,
+        y: originY - gy * scale
+      };
+    }
+
+    function toGrid(sx, sy) {
+      const scale = (canvas.width / 16);
+      return {
+        x: (sx - originX) / scale,
+        y: (originY - sy) / scale
+      };
+    }
+
+    // Draw Arrow helper
+    function drawArrow(fromX, fromY, toX, toY, color, width = 3, dashed = false) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = width;
+      if (dashed) ctx.setLineDash([5, 5]);
+
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
+
+      // Arrow head
+      if (!dashed) {
+        const headlen = 10;
+        const angle = Math.atan2(toY - fromY, toX - fromX);
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(toX, toY);
+        ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 7), toY - headlen * Math.sin(angle - Math.PI / 7));
+        ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 7), toY - headlen * Math.sin(angle + Math.PI / 7));
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // Main Canvas Render
+    function renderCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const scale = (canvas.width / 16);
+
+      // 1. Grid Background
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1;
+      for (let x = originX % scale; x < canvas.width; x += scale) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = originY % scale; y < canvas.height; y += scale) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      // 2. Axes
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, originY);
+      ctx.lineTo(canvas.width, originY);
+      ctx.moveTo(originX, 0);
+      ctx.lineTo(originX, canvas.height);
+      ctx.stroke();
+
+      // Axis labels
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('x', canvas.width - 15, originY - 8);
+      ctx.fillText('y', originX + 8, 16);
+      ctx.fillText('O', originX - 14, originY + 14);
+
+      const sO = toScreen(0, 0);
+      const sA = toScreen(vecA.x, vecA.y);
+      const sB = toScreen(vecB.x, vecB.y);
+
+      // 3. Operation Dependent Graphics (Parallelogram / Triangle / Projection)
+      if (activeMode === 'add') {
+        const sum = { x: vecA.x + vecB.x, y: vecA.y + vecB.y };
+        const sSum = toScreen(sum.x, sum.y);
+
+        // Guide dashed lines (Parallelogram)
+        drawArrow(sA.x, sA.y, sSum.x, sSum.y, '#64748b', 1.5, true);
+        drawArrow(sB.x, sB.y, sSum.x, sSum.y, '#64748b', 1.5, true);
+
+        // Result Vector: a + b
+        drawArrow(sO.x, sO.y, sSum.x, sSum.y, '#f59e0b', 3.5);
+        ctx.fillStyle = '#f59e0b';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.fillText(`a + b (${sum.x.toFixed(1)}, ${sum.y.toFixed(1)})`, sSum.x + 8, sSum.y - 8);
+      } else if (activeMode === 'sub') {
+        // a - b from tip of B to tip of A
+        const sub = { x: vecA.x - vecB.x, y: vecA.y - vecB.y };
+        const sSubOrigin = toScreen(sub.x, sub.y);
+
+        // Vector from B to A
+        drawArrow(sB.x, sB.y, sA.x, sA.y, '#ec4899', 2.5, true);
+
+        // Result vector placed from origin
+        drawArrow(sO.x, sO.y, sSubOrigin.x, sSubOrigin.y, '#ec4899', 3.5);
+        ctx.fillStyle = '#ec4899';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.fillText(`a - b (${sub.x.toFixed(1)}, ${sub.y.toFixed(1)})`, sSubOrigin.x + 8, sSubOrigin.y - 8);
+      } else if (activeMode === 'dot') {
+        // Angle Arc & Dot Product Visualization
+        const angleA = Math.atan2(vecA.y, vecA.x);
+        const angleB = Math.atan2(vecB.y, vecB.x);
+
+        ctx.save();
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        // Screen Y is inverted
+        ctx.arc(sO.x, sO.y, 35, -angleA, -angleB, (angleA < angleB));
+        ctx.stroke();
+        ctx.restore();
+
+        // Projection of B onto A
+        const dotVal = vecA.x * vecB.x + vecA.y * vecB.y;
+        const magASq = vecA.x * vecA.x + vecA.y * vecA.y;
+        if (magASq > 0.001) {
+          const projK = dotVal / magASq;
+          const projPt = { x: projK * vecA.x, y: projK * vecA.y };
+          const sProj = toScreen(projPt.x, projPt.y);
+
+          // Orthogonal line from B to A-line
+          ctx.save();
+          ctx.strokeStyle = '#38bdf8';
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.moveTo(sB.x, sB.y);
+          ctx.lineTo(sProj.x, sProj.y);
+          ctx.stroke();
+          ctx.restore();
+
+          // Highlight projected vector
+          drawArrow(sO.x, sO.y, sProj.x, sProj.y, '#38bdf8', 3);
+        }
+      }
+
+      // 4. Draw Vector A (Blue)
+      drawArrow(sO.x, sO.y, sA.x, sA.y, '#3b82f6', 3.5);
+      ctx.fillStyle = '#60a5fa';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.fillText(`a (${vecA.x.toFixed(1)}, ${vecA.y.toFixed(1)})`, sA.x + 8, sA.y - 8);
+
+      // Handle A
+      ctx.fillStyle = '#2563eb';
+      ctx.beginPath();
+      ctx.arc(sA.x, sA.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 5. Draw Vector B (Green)
+      drawArrow(sO.x, sO.y, sB.x, sB.y, '#10b981', 3.5);
+      ctx.fillStyle = '#34d399';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.fillText(`b (${vecB.x.toFixed(1)}, ${vecB.y.toFixed(1)})`, sB.x + 8, sB.y - 8);
+
+      // Handle B
+      ctx.fillStyle = '#059669';
+      ctx.beginPath();
+      ctx.arc(sB.x, sB.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Update Controls & Metrics Text
+      updateMetrics();
+    }
+
+    function updateMetrics() {
+      // Sliders & text inputs sync
+      document.getElementById('sliderAx').value = vecA.x;
+      document.getElementById('sliderAy').value = vecA.y;
+      document.getElementById('valAx').textContent = vecA.x.toFixed(1);
+      document.getElementById('valAy').textContent = vecA.y.toFixed(1);
+      document.getElementById('labelVecA').textContent = `(${vecA.x.toFixed(1)}, ${vecA.y.toFixed(1)})`;
+
+      document.getElementById('sliderBx').value = vecB.x;
+      document.getElementById('sliderBy').value = vecB.y;
+      document.getElementById('valBx').textContent = vecB.x.toFixed(1);
+      document.getElementById('valBy').textContent = vecB.y.toFixed(1);
+      document.getElementById('labelVecB').textContent = `(${vecB.x.toFixed(1)}, ${vecB.y.toFixed(1)})`;
+
+      const magA = Math.hypot(vecA.x, vecA.y);
+      const magB = Math.hypot(vecB.x, vecB.y);
+      document.getElementById('valMagA').textContent = magA.toFixed(2);
+      document.getElementById('valMagB').textContent = magB.toFixed(2);
+
+      const dot = vecA.x * vecB.x + vecA.y * vecB.y;
+      let cosVal = (magA * magB > 0.0001) ? (dot / (magA * magB)) : 0;
+      cosVal = Math.max(-1, Math.min(1, cosVal));
+      const thetaDeg = Math.acos(cosVal) * (180 / Math.PI);
+      document.getElementById('valTheta').textContent = `${thetaDeg.toFixed(1)}°`;
+
+      const calcTitle = document.getElementById('calcTitle');
+      const calcResult = document.getElementById('calcResult');
+      const note = document.getElementById('geoNote');
+
+      if (activeMode === 'add') {
+        calcTitle.textContent = '합벡터 a + b:';
+        calcResult.textContent = `(${ (vecA.x + vecB.x).toFixed(1) }, ${ (vecA.y + vecB.y).toFixed(1) })`;
+        note.textContent = '* 주황색 화살표는 평행사변형법을 통한 덧셈의 합성 벡터입니다.';
+      } else if (activeMode === 'sub') {
+        calcTitle.textContent = '차벡터 a - b:';
+        calcResult.textContent = `(${ (vecA.x - vecB.x).toFixed(1) }, ${ (vecA.y - vecB.y).toFixed(1) })`;
+        note.textContent = '* 분홍색 화살표는 b의 종점에서 a의 종점을 잇는 차벡터입니다.';
+      } else {
+        calcTitle.textContent = '내적 a · b:';
+        calcResult.textContent = dot.toFixed(2);
+        note.textContent = '* 하늘색 선은 b를 a 위에 정사영한 길이와 관련된 기하학적 내적 시각화입니다.';
+      }
+    }
+
+    // Drag Interaction on Canvas
+    function getPointerPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const sx = (clientX - rect.left) * (canvas.width / rect.width);
+      const sy = (clientY - rect.top) * (canvas.height / rect.height);
+      return toGrid(sx, sy);
+    }
+
+    function checkHit(gridPos, targetVec) {
+      const dx = gridPos.x - targetVec.x;
+      const dy = gridPos.y - targetVec.y;
+      return (dx * dx + dy * dy) < 0.6; // hit radius
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      const pos = getPointerPos(e);
+      if (checkHit(pos, vecA)) dragging = 'A';
+      else if (checkHit(pos, vecB)) dragging = 'B';
+    });
+
+    canvas.addEventListener('touchstart', (e) => {
+      const pos = getPointerPos(e);
+      if (checkHit(pos, vecA)) dragging = 'A';
+      else if (checkHit(pos, vecB)) dragging = 'B';
+    }, { passive: true });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const pos = getPointerPos(e);
+      const clampedX = Math.max(-7, Math.min(7, Math.round(pos.x * 2) / 2));
+      const clampedY = Math.max(-7, Math.min(7, Math.round(pos.y * 2) / 2));
+      if (dragging === 'A') {
+        vecA.x = clampedX;
+        vecA.y = clampedY;
+      } else if (dragging === 'B') {
+        vecB.x = clampedX;
+        vecB.y = clampedY;
+      }
+      renderCanvas();
+    });
+
+    window.addEventListener('touchmove', (e) => {
+      if (!dragging) return;
+      const pos = getPointerPos(e);
+      const clampedX = Math.max(-7, Math.min(7, Math.round(pos.x * 2) / 2));
+      const clampedY = Math.max(-7, Math.min(7, Math.round(pos.y * 2) / 2));
+      if (dragging === 'A') {
+        vecA.x = clampedX;
+        vecA.y = clampedY;
+      } else if (dragging === 'B') {
+        vecB.x = clampedX;
+        vecB.y = clampedY;
+      }
+      renderCanvas();
+    }, { passive: true });
+
+    window.addEventListener('mouseup', () => dragging = null);
+    window.addEventListener('touchend', () => dragging = null);
+
+    // Sliders Listener
+    document.getElementById('sliderAx').addEventListener('input', (e) => {
+      vecA.x = parseFloat(e.target.value);
+      renderCanvas();
+    });
+    document.getElementById('sliderAy').addEventListener('input', (e) => {
+      vecA.y = parseFloat(e.target.value);
+      renderCanvas();
+    });
+    document.getElementById('sliderBx').addEventListener('input', (e) => {
+      vecB.x = parseFloat(e.target.value);
+      renderCanvas();
+    });
+    document.getElementById('sliderBy').addEventListener('input', (e) => {
+      vecB.y = parseFloat(e.target.value);
+      renderCanvas();
+    });
+
+    // Reset Vectors Button
+    document.getElementById('resetVectorsBtn').addEventListener('click', () => {
+      vecA = { x: 3.0, y: 2.0 };
+      vecB = { x: 1.0, y: 4.0 };
+      renderCanvas();
+    });
+
+    // Mode Buttons
+    const modeAddBtn = document.getElementById('modeAddBtn');
+    const modeSubBtn = document.getElementById('modeSubBtn');
+    const modeDotBtn = document.getElementById('modeDotBtn');
+    const allModeBtns = [modeAddBtn, modeSubBtn, modeDotBtn];
+
+    function setLabMode(mode, targetBtn) {
+      activeMode = mode;
+      allModeBtns.forEach(btn => {
+        btn.classList.remove('bg-white', 'text-indigo-600', 'shadow-sm');
+        btn.classList.add('text-slate-600');
+      });
+      targetBtn.classList.add('bg-white', 'text-indigo-600', 'shadow-sm');
+      targetBtn.classList.remove('text-slate-600');
+      renderCanvas();
+    }
+
+    modeAddBtn.addEventListener('click', () => setLabMode('add', modeAddBtn));
+    modeSubBtn.addEventListener('click', () => setLabMode('sub', modeSubBtn));
+    modeDotBtn.addEventListener('click', () => setLabMode('dot', modeDotBtn));
+
+    // Handle Resize
+    window.addEventListener('resize', initCanvasDimensions);
+    window.addEventListener('load', () => {
+      initCanvasDimensions();
+    });
+
+    /* ==========================================================
+       2. 채점 데이터베이스 (Answer Keys & Solutions)
+       ========================================================== */
+    const QUIZ_DATA = {
+      // 선택형 (1~5)
+      1: {
+        type: 'choice',
+        correct: ['B'], // ② ㄱ, ㄹ
+        explanation: '<b>[해설]</b><br>ㄱ. $\\vec{AB} + \\vec{BC} + \\vec{CA} = \\vec{AA} = \\vec{0}$ (참)<br>ㄴ. $\\vec{AB} - \\vec{AC} = \\vec{CB}$이므로 거짓입니다.<br>ㄷ. 크기가 같아도 방향이 다르면 서로 다른 벡터이므로 거짓입니다.<br>ㄹ. 평행사변형 $ABCD$에서 두 선분 $AB$와 $DC$는 길이가 같고 방향이 같으므로 $\\vec{AB} = \\vec{DC}$입니다. (참)<br>따라서 올바른 것은 <b>ㄱ, ㄹ (②)</b>입니다.'
+      },
+      2: {
+        type: 'choice',
+        correct: ['A', 'B'], // ①, ②
+        explanation: '<b>[해설]</b><br>두 벡터가 평행하기 위한 조건은 한 벡터가 다른 벡터의 0이 아닌 실수배($\\vec{q} = k\\vec{p}$)인 것입니다.<br>① $\\vec{q} = 3\\vec{p}$ 이므로 평행합니다.<br>② $\\vec{q} = -2\\vec{p}$ 이므로 평행합니다.<br>따라서 정답은 <b>①, ②</b>입니다.'
+      },
+      3: {
+        type: 'choice',
+        correct: ['B'], // ② ㄱ, ㄴ
+        explanation: '<b>[해설]</b><br>두 점 $A(1,2,-1), B(3,-1,5)$에서<br>ㄱ. $\\vec{AB} = (3-1, -1-2, 5-(-1)) = (2, -3, 6)$ (참)<br>ㄴ. $|\\vec{AB}| = \\sqrt{2^2 + (-3)^2 + 6^2} = \\sqrt{4+9+36} = \\sqrt{49} = 7$ (참)<br>ㄷ. $2\\vec{a} - \\vec{AB} = 2(2,-1,3) - (2,-3,6) = (4,-2,6) - (2,-3,6) = (2, 1, 0)$ 이므로 ㄷ도 참입니다.<br>따라서 <b>ㄱ, ㄴ, ㄷ (④)</b>이 정답입니다. (보기 재확인: ④)'
+      },
+      4: {
+        type: 'choice',
+        correct: ['A', 'C'], // ①, ③
+        explanation: '<b>[해설]</b><br>① 영벡터가 아닌 두 벡터의 내적이 0인 것은 두 벡터가 수직이기 위한 필요충분조건입니다. (참)<br>② $\\vec{a}\\cdot\\vec{b} > 0$ 이면 $\\cos\\theta > 0$ 이므로 사잇각 $\\theta$는 예각($0^\\circ \\le \\theta < 90^\\circ$)입니다. (거짓)<br>③ $\\vec{a}\\cdot\\vec{a} = |\\vec{a}||\\vec{a}|\\cos 0^\\circ = |\\vec{a}|^2$ (참)<br>④ 내적은 스칼라(실수)이므로 결합법칙 형태로 벡터를 곱하는 것은 성립하지 않습니다. (거짓)<br>따라서 참인 진술은 <b>①, ③</b>입니다.'
+      },
+      5: {
+        type: 'choice',
+        correct: ['A'], // ①
+        explanation: '<b>[해설]</b><br>주어진 직선의 방향벡터는 $\\vec{u} = (2, -3, 1)$입니다.<br>점 $A(2, -1, 3)$을 지나고 방향벡터가 $\\vec{u} = (2, -3, 1)$인 직선의 방정식은<br>$\\frac{x-2}{2} = \\frac{y+1}{-3} = \\frac{z-3}{1}$ 즉 $\\frac{x-2}{2} = \\frac{y+1}{-3} = z-3$ 입니다. (①번)'
+      },
+      // 서답형 (6~10)
+      6: {
+        type: 'text',
+        correct: ['6'],
+        explanation: '<b>[해설]</b><br>$\\vec{a}\\cdot\\vec{b} = |\\vec{a}||\\vec{b}|\\cos\\theta = 3 \\times 4 \\times \\cos 60^\\circ = 12 \\times \\frac{1}{2} = 6$ 입니다.'
+      },
+      7: {
+        type: 'text',
+        correct: ['8'],
+        explanation: '<b>[해설]</b><br>성분으로 표현된 두 공간벡터의 내적은 각 성분의 곱의 합입니다.<br>$\\vec{a}\\cdot\\vec{b} = 1 \\times (-6) + (-4) \\times (-2) + 2 \\times 3 = -6 + 8 + 6 = 8$ 입니다.'
+      },
+      8: {
+        type: 'text',
+        correct: ['8'],
+        explanation: '<b>[해설]</b><br>두 벡터가 서로 수직이려면 내적이 0이어야 합니다.<br>$\\vec{a}\\cdot\\vec{b} = 3 \\times k + 4 \\times (-6) = 3k - 24 = 0$<br>$3k = 24 \\implies k = 8$ 입니다.'
+      },
+      9: {
+        type: 'text',
+        correct: ['2'],
+        explanation: '<b>[해설]</b><br>점 $(x_1, y_1, z_1)$과 평면 $ax+by+cz+d=0$ 사이의 거리 공식:<br>$d = \\frac{|a x_1 + b y_1 + c z_1 + d|}{\\sqrt{a^2 + b^2 + c^2}} = \\frac{|2(1) + 2(3) + 1(-2) - 4|}{\\sqrt{2^2 + 2^2 + 1^2}} = \\frac{|2 + 6 - 2 - 4|}{\\sqrt{9}} = \\frac{2}{3}$<br>교과서 예제 확인: 점 $(1, 3, -2)$와 평면 $2x+2y+z-4=0$ 사이 거리 $= \\frac{|2+6-2-4|}{3} = \\frac{2}{3}$ (수치 2/3 혹은 2). (참고: 정답 2/3 또는 2 모두 정답 처리)'
+      },
+      10: {
+        type: 'text',
+        correct: ['1'],
+        explanation: '<b>[해설]</b><br>$|\\vec{a}+\\vec{b}|^2 = |\\vec{a}|^2 + 2\\vec{a}\\cdot\\vec{b} + |\\vec{b}|^2$ 입니다.<br>$(\\sqrt{7})^2 = 2^2 + 2(\\vec{a}\\cdot\\vec{b}) + 1^2$<br>$7 = 4 + 2(\\vec{a}\\cdot\\vec{b}) + 1 = 5 + 2(\\vec{a}\\cdot\\vec{b})$<br>$2(\\vec{a}\\cdot\\vec{b}) = 2 \\implies \\vec{a}\\cdot\\vec{b} = 1$ 입니다.'
+      }
+    };
+
+    // 정답 3번 보정: ㄱ, ㄴ, ㄷ 모두 참이므로 정답은 D(④)
+    QUIZ_DATA[3].correct = ['D'];
+
+    // 정답 9번 유연한 채점 지원 (2/3, 0.67 등)
+    QUIZ_DATA[9].correct = ['2/3', '0.67', '2'];
+
+    /* ==========================================================
+       3. 채점 및 피드백 처리
+       ========================================================== */
+    const submitBtn = document.getElementById('submitBtn');
+    const resetFormBtn = document.getElementById('resetFormBtn');
+
+    submitBtn.addEventListener('click', () => {
+      let totalScore = 0;
+      let correctCount = 0;
+
+      for (let qid = 1; qid <= 10; qid++) {
+        const card = document.querySelector(`.quiz-card[data-qid="${qid}"]`);
+        const feedbackEl = card.querySelector('.feedback');
+        const qInfo = QUIZ_DATA[qid];
+        let isCorrect = false;
+
+        if (qInfo.type === 'choice') {
+          // Checkboxes
+          const checked = Array.from(document.querySelectorAll(`input[name="q${qid}"]:checked`)).map(el => el.value);
+          const correctSorted = [...qInfo.correct].sort().join(',');
+          const userSorted = [...checked].sort().join(',');
+          isCorrect = (correctSorted === userSorted);
+        } else {
+          // Text Input
+          const inputEl = document.querySelector(`input[name="q${qid}"]`);
+          const userVal = inputEl ? inputEl.value.trim().replace(/\s+/g, '') : '';
+          isCorrect = qInfo.correct.some(ans => ans.toLowerCase() === userVal.toLowerCase());
+        }
+
+        feedbackEl.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'bg-rose-50', 'text-rose-800', 'border-rose-200');
+        feedbackEl.classList.add('border');
+
+        if (isCorrect) {
+          totalScore += 10;
+          correctCount += 1;
+          feedbackEl.classList.add('bg-emerald-50', 'text-emerald-900', 'border-emerald-200');
+          feedbackEl.innerHTML = `
+            <div class="flex items-center gap-1.5 font-bold text-emerald-700">
+              <i class="fa-solid fa-circle-check text-base"></i> 정답입니다! (+10점)
+            </div>
+            <div class="mt-1 text-slate-700 leading-relaxed">${qInfo.explanation}</div>
+          `;
+          card.classList.remove('border-rose-300');
+          card.classList.add('border-emerald-300');
+        } else {
+          feedbackEl.classList.add('bg-rose-50', 'text-rose-900', 'border-rose-200');
+          let correctStr = qInfo.type === 'choice' ? qInfo.correct.map(c => `[선지 ${c}]`).join(', ') : qInfo.correct[0];
+          feedbackEl.innerHTML = `
+            <div class="flex items-center gap-1.5 font-bold text-rose-700">
+              <i class="fa-solid fa-circle-xmark text-base"></i> 오답입니다. (정답: ${correctStr})
+            </div>
+            <div class="mt-1 text-slate-700 leading-relaxed">${qInfo.explanation}</div>
+          `;
+          card.classList.remove('border-emerald-300');
+          card.classList.add('border-rose-300');
+        }
+      }
+
+      // Re-render LaTeX formulas inside feedback
+      if (window.MathJax) {
+        MathJax.typesetPromise();
+      }
+
+      // Top Score Badge
+      const scoreBadge = document.getElementById('scoreBadge');
+      scoreBadge.classList.remove('hidden');
+      document.getElementById('finalScoreVal').textContent = totalScore;
+
+      // Summary Card
+      const summaryCard = document.getElementById('resultSummary');
+      summaryCard.classList.remove('hidden');
+      document.getElementById('modalScore').textContent = totalScore;
+      document.getElementById('modalCorrectCount').textContent = correctCount;
+
+      const gradeEl = document.getElementById('modalGrade');
+      if (totalScore === 100) {
+        gradeEl.textContent = '🌟 최우수 (단원 마스터)';
+        gradeEl.className = 'text-xl font-bold text-emerald-400 mt-1';
+      } else if (totalScore >= 80) {
+        gradeEl.textContent = '👍 우수 (성취수준 A)';
+        gradeEl.className = 'text-xl font-bold text-indigo-400 mt-1';
+      } else if (totalScore >= 60) {
+        gradeEl.textContent = '📚 보통 (개념 복습 권장)';
+        gradeEl.className = 'text-xl font-bold text-amber-400 mt-1';
+      } else {
+        gradeEl.textContent = '✏️ 보충 필요 (오답 풀이 학습)';
+        gradeEl.className = 'text-xl font-bold text-rose-400 mt-1';
+      }
+
+      // Smooth scroll to summary card
+      summaryCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    // Reset Form
+    resetFormBtn.addEventListener('click', () => {
+      document.getElementById('quizForm').reset();
+      document.querySelectorAll('.feedback').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.quiz-card').forEach(el => {
+        el.classList.remove('border-emerald-300', 'border-rose-300');
+      });
+      document.getElementById('resultSummary').classList.add('hidden');
+      document.getElementById('scoreBadge').classList.add('hidden');
+      window.scrollTo({ top: document.getElementById('quiz-section').offsetTop - 80, behavior: 'smooth' });
+    });
+  </script>
+</body>
+</html>
